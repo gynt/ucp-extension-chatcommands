@@ -44,7 +44,7 @@ end
 
 
 exports = {
-    enable = function(self, module_options, global_options)
+    enable = function(self, config)
         self.COMMAND_REGISTRY = COMMAND_REGISTRY
 
         modules.chat:registerChatHandler("/", onChatCommand)
@@ -66,8 +66,8 @@ exports = {
         return true
     end,
 
-    disable = function(self)
-        return false, "not implemented"
+    disable = function(self, config)
+        
     end,
 
     registerChatCommand = function(self, commandName, commandCallback)

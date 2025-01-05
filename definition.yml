@@ -1,6 +1,8 @@
 # The name of your module
 name: chatcommands
-version: 0.1.0
+version: 1.0.0
 author: gynt
-game: [SHC==1.41]
-dependencies: [ chat >= 0.1.0 ]
+dependencies:
+  chat: "^1.0.0"
+meta:
+  version: 1.0.0
