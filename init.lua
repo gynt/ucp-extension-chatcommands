@@ -57,7 +57,7 @@ function exports.enable(self, config)
 
   modules.chat:registerChatHandler("/", onChatCommand)
 
-  self:registerChatCommand("help", function(command)
+  self:registerChatCommand("help", function(args, command)
       log(2, "Processing command: " .. tostring(command))
       local commands = {}
       for k, v in pairs(COMMAND_REGISTRY) do
@@ -78,21 +78,66 @@ function exports.disable(self, config)
     
 end
 
+local function stringSplit(s, sep)
+  local sep, fields = sep or " ", {}
+  local pattern = string.format("([^%s]+)", sep)
+  string.gsub(s, pattern, function(c) fields[#fields+1] = c end)
+  return fields
+end
+
 ---Register a chat command callback which is called upon
 ---a chat message with that command
 ---@param self table Self
----@param commandName string The command name to register without the "/" prefix
----@param commandCallback fun(args: table, command: string):boolean, string Callback function called
+---@param command string|table The command name to register without the "/" prefix, or an argparse object (includes "/" prefix)
+---@param callback fun(args: table, command: string):boolean, string Callback function called
 ---upon command. Should return two values: whether to keep the chat modal open (boolean), and an optional
----new message in the form of a string.
+---new message in the form of a string. Note that the args parameter in the callback can be an argparse result object
 ---@return void
-function exports.registerChatCommand(self, commandName, commandCallback)
-  if COMMAND_REGISTRY[commandName] ~= nil then
-    error("Failed to register command. Command was already registered: " .. tostring(commandName))
-  end
-  COMMAND_REGISTRY[commandName] = commandCallback
+function exports.registerChatCommand(self, command, callback)
+  local commandString = command
+  local commandCallback = callback
 
-  log(1, "Registered command: " .. tostring(commandName))
+  if type(command) == "table" then
+    -- argparse object
+    local ap = command
+    commandString = ap._name
+    if commandString:sub(1,1) == "/" then
+      commandString = commandString:sub(2)
+    end
+
+    commandCallback = function(args, cmd)
+      local success, result = ap:parse(args)      
+      if not success then
+        local err = result
+        if type(err) == "string" then
+          error(err) --reraise
+        end
+
+        if err.status == "help" then
+          log(INFO, cmd)
+          log(INFO, "\n" .. tostring(err.message))
+          --TODO: make the usage fit in the Crusader window
+          --so that Commands actually fit
+          --local messages = stringSplit(err.message, "\n\n")
+          return false, err.usage
+        elseif err.status == "error" then
+          return false, {err.message, err.usage}       
+        else
+          error(string.format("unknown error status: %s", err.status))   
+        end
+
+      end
+
+      return callback(result, cmd)
+    end
+  end
+
+  if COMMAND_REGISTRY[commandString] ~= nil then
+    error("Failed to register command. Command was already registered: " .. tostring(commandString))
+  end
+  COMMAND_REGISTRY[commandString] = commandCallback
+
+  log(1, "Registered command: " .. tostring(commandString))
 end
 
 ---Untested

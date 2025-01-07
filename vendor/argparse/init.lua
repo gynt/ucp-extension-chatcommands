@@ -230,9 +230,14 @@ local add_help = {"add_help", function(self, value)
      local help = self:flag()
         :description "Show this help message and exit."
         :action(function()
-           print(self:get_help())
-           --modification:gynt: zap away os.exit()
+           --modification:gynt: zap away os.exit() in favor of error()
+          -- print(self:get_help())
           --  os.exit(0)
+           error({
+            message = self:get_help(),
+            usage = self:get_usage(),
+            status = "help",
+           })
         end)
 
      if value ~= true then
@@ -657,8 +662,7 @@ function Parser:flag(...)
 end
 
 function Parser:command(...)
-  --modification:gynt: make help default false
-  local command = Command():add_help(false)(...)
+  local command = Command():add_help(true)(...)
   command._parent = self
   table.insert(self._commands, command)
   return command
@@ -815,10 +819,13 @@ function Parser:get_usage()
   end
 
   if #self._commands > 0 then
+     --modification: gynt: include elaborate command information
+     local commands = self:_get_commands()
+     local s = "<commands: " .. commands ..  ">"
      if self._require_command then
-        add("<command>")
+        add(s)
      else
-        add("[<command>]")
+        add("[" .. s .. "]")
      end
 
      add("...")
@@ -1087,18 +1094,26 @@ function Parser:add_help_command(value)
      :args "?"
      :action(function(_, _, cmd)
         if not cmd then
-           print(self:get_help())
            --modification:gynt: remove os.exit()
+          -- print()
            --os.exit(0)
-           return
+           error({
+            message = self:get_help(),
+            usage = self:get_usage(),
+            status = "help",
+           })
         else
            for _, command in ipairs(self._commands) do
               for _, alias in ipairs(command._aliases) do
                  if alias == cmd then
-                    print(command:get_help())
                     --modification:gynt: remove os.exit()
+                    --print(command:get_help())
                     --os.exit(0)
-                    return
+                    error({
+                      message = self:get_help(),
+                      usage = self:get_usage(),
+                      status = "help",
+                    })
                  end
               end
            end
@@ -2062,7 +2077,7 @@ function Parser:error(msg)
   error({
     usage = self:get_usage(),
     message = msg,
-    status = "error", -- gynt: superfluous but okay
+    status = "error", -- gynt: to distinguish it from 'help' situations
   })
 end
 
@@ -2109,13 +2124,12 @@ local argparse = {}
 
 argparse.version = "0.7.1"
 
---modification:gynt: modified such that help is not added by default as it exists the process 
 --modification:gynt: removed default_cmdline[0] in favor of program name specification
 setmetatable(argparse, {__call = function(program, ...)
   if program == nil then
     error("no program name specified")
   end
-  return Parser(program):add_help(false)(...)
+  return Parser(program):add_help(true)(...)
 end})
 
 return argparse
