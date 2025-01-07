@@ -4,5 +4,6 @@ version: 1.0.0
 author: gynt
 dependencies:
   chat: "^1.0.0"
+  framework: ">=3.0.6"
 meta:
   version: 1.0.0
