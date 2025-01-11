@@ -88,7 +88,7 @@ end
 ---Register a chat command callback which is called upon
 ---a chat message with that command
 ---@param self table Self
----@param command string|table The command name to register without the "/" prefix, or an argparse object (includes "/" prefix)
+---@param command string|Parser The command name to register without the "/" prefix, or an argparse object (includes "/" prefix)
 ---@param callback fun(args: table, command: string):boolean, string Callback function called
 ---upon command. Should return two values: whether to keep the chat modal open (boolean), and an optional
 ---new message in the form of a string. Note that the args parameter in the callback can be an argparse result object
@@ -121,6 +121,7 @@ function exports.registerChatCommand(self, command, callback)
           --local messages = stringSplit(err.message, "\n\n")
           return false, err.usage
         elseif err.status == "error" then
+          log(INFO, err.message)
           return false, {err.message, err.usage}       
         else
           error(string.format("unknown error status: %s", err.status))   
@@ -143,12 +144,13 @@ end
 ---Untested
 ---Returns a new Parser from the argparse lua library.
 ---Make sure to call pparse() instead of parse() to avoid exiting Crusader.
----https://github.com/mpeterv/argparse
+---https://argparse.readthedocs.io/en/stable/
 ---@param self table Self
+---@param command string Command to be defined including the "/"
 ---@param ... any Arguments passed to the initialization function Parser
----@return table The parser as defined in argparse
-function exports.argparser(self, ...)
-  return imports.argparse(...)
+---@return Parser The parser as defined in argparse
+function exports.argparser(self, command, ...)
+  return imports.argparse(command, ...)
 end
 
 return exports, {

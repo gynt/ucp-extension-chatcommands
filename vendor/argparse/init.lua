@@ -252,6 +252,7 @@ local add_help = {"add_help", function(self, value)
   end
 end}
 
+---@class Parser
 local Parser = class({
   _arguments = {},
   _options = {},
@@ -280,6 +281,7 @@ local Parser = class({
   add_help
 })
 
+---@class Command
 local Command = class({
   _aliases = {},
   _public_aliases = {}
@@ -307,6 +309,7 @@ local Command = class({
   add_help
 }, Parser)
 
+---@class Argument
 local Argument = class({
   _minargs = 1,
   _maxargs = 1,
@@ -331,6 +334,7 @@ local Argument = class({
   option_init
 })
 
+---@class Option
 local Option = class({
   _aliases = {},
   _public_aliases = {},
@@ -2124,12 +2128,17 @@ local argparse = {}
 
 argparse.version = "0.7.1"
 
---modification:gynt: removed default_cmdline[0] in favor of program name specification
-setmetatable(argparse, {__call = function(program, ...)
+---@param program string program name
+---@param ... any other arguments passed to Parser
+---@return Parser
+local function generator(program, ...)
   if program == nil then
     error("no program name specified")
   end
   return Parser(program):add_help(true)(...)
-end})
+end
+
+--modification:gynt: removed default_cmdline[0] in favor of program name specification
+setmetatable(argparse, {__call = generator})
 
 return argparse
